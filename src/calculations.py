@@ -1,11 +1,16 @@
-# calculate the different VaR metrics for given data
+"""
+Calculate the different VaR metrics for given data.
+"""
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-'''Historical VaR'''
+
 def historical_var(returns, confidence_level=0.95):
+    """
+    Calculate Historical VaR
+    """
 
     # Convert to numpy array if input is a pandas Series
     if isinstance(returns, pd.Series):
@@ -20,8 +25,11 @@ def historical_var(returns, confidence_level=0.95):
 
     return var
 
-'''Parametric VaR'''
+
 def parametric_var(returns, confidence_level=0.95):
+    """
+    Calculate Parametric VaR
+    """
 
     # Convert to numpy array if input is a pandas Series
     if isinstance(returns, pd.Series):
@@ -43,8 +51,11 @@ def parametric_var(returns, confidence_level=0.95):
 
     return var
 
-'''Monte Carlo VaR'''
+
 def monte_carlo_var(returns, confidence_level=0.95, num_simulations=10000):
+    """
+    Calculate Monte Carlo VaR
+    """
 
     # Convert to numpy array if input is a pandas Series
     if isinstance(returns, pd.Series):
@@ -66,8 +77,11 @@ def monte_carlo_var(returns, confidence_level=0.95, num_simulations=10000):
 
     return var
 
-'''Calculate Conditional VaR (CVaR)'''
+
 def conditional_var(returns, var, confidence_level=0.95):
+    """
+    Calculate Conditional VaR (CVaR)
+    """
 
     # Convert to numpy array if input is a pandas Series
     if isinstance(returns, pd.Series):
@@ -82,8 +96,11 @@ def conditional_var(returns, var, confidence_level=0.95):
 
     return cvar
 
-'''Display outcome of all VaR methods'''
+
 def compare_var_methods(returns, confidence_level=0.95):
+    """
+    Display outcome of all VaR methods
+    """
 
     # calculate the different VaR metrics
     historical = historical_var(returns, confidence_level)
@@ -97,8 +114,11 @@ def compare_var_methods(returns, confidence_level=0.95):
         'Monte Carlo VaR': monte_carlo
     }
 
-'''Convert VaR from percentage to dollar amount.'''
+
 def calculate_var_dollars(var_percentage, portfolio_value):
-    
+    """
+    Convert VaR from percentage to dollar amount.
+    """
+
     # Multiply percentage VaR by portfolio value to get dollar VaR
     return var_percentage * portfolio_value

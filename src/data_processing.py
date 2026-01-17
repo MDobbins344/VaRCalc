@@ -1,4 +1,6 @@
-# Take yfinance data and process it in order to pass to calculations file.
+"""
+Take yfinance data and process it in order to pass to calculations file.
+"""
 
 import pandas as pd
 import yfinance as yf
@@ -10,9 +12,12 @@ class DataProcessor:
         self.data = None
         self.returns = None
 
-    """Fetch historical data from yfinance."""
+    
     def fetch_data(self, ticker, start_date, end_date):
-        
+        """
+        Fetch historical data from yfinance.
+        """
+
         try:
 
             # check for single ticker, if so, convert to list
@@ -53,8 +58,11 @@ class DataProcessor:
             print(f"Error fetching data: {e}")
             return None
 
-    '''Calculate daily returns from price data'''
+    
     def calculate_returns(self, price_data):
+        """
+        Calculate daily returns from price data
+        """
 
         # Calculate percent change and drop NaN values from first row
         returns = price_data.pct_change().dropna()
@@ -68,8 +76,11 @@ class DataProcessor:
 
         return returns
 
-    '''Get portfolio data and returns given tickers, weights, and date range'''
+    
     def get_portfolio_data(self, tickers, weights, start_date, end_date):
+        """
+        Get portfolio data and returns given tickers, weights, and date range
+        """
 
         # throw error if weights do not add up to 1
         if abs(sum(weights) - 1.0) > 0.01:
@@ -102,8 +113,11 @@ class DataProcessor:
         return individual_returns, portfolio_returns
     
 
-    '''Get statistics of the current data'''
+    
     def get_data_summary(self):
+        """
+        Get statistics of the current data
+        """
 
         if self.returns is None:
             raise ValueError("No returns data available.")
@@ -120,8 +134,11 @@ class DataProcessor:
 
         return summary
     
-    '''Get summary statistics for all stocks in the portfolio'''
+   
     def get_portfolio_summary(self, tickers, weights):
+        """
+        Get summary statistics for all stocks in the portfolio
+        """
 
         if not hasattr(self, 'individual_returns') or self.individual_returns is None:
             return {"error": "No individual stock data available. Run get_portfolio_data() first."}
