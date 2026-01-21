@@ -231,3 +231,49 @@ def plot_portfolio_comparison(individual_vars, portfolio_var, tickers, weights):
     
     plt.tight_layout()
     return fig
+
+def plot_cvar_comparison(var_value, cvar_value, confidence_level=0.95):
+    """
+    Plot the difference between VaR and CVaR.
+    """
+
+    fig, ax = plt.subplots(figsize=(10,6))
+
+    # define chart peripherals
+    labels = ['Var\n(Threshold)', 'CVaR\n(Avg Tail Loss)']
+    values = [var_value, cvar_value]
+    colors = ['#ff7f0e', '#d62728']
+
+    # create bar chart
+    bars = ax.bar(labels, values, color=colors, alpha=0.7,
+                   edgecolor='black', linewidth=2, width=0.5)
+    
+    # add value labels to bars
+    for bar, value in zip(bars, values):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height,
+                f'(value:.4f)', va='bottom' if value < 0 else 'top',
+                  fontsize=14, fontweight='bold')
+        
+    # add arrow showing additional tail risk
+    tail_risk = cvar_value - var_value
+    ax.annotate('', xy=(0.5, cvar_value), xytext=(0.5, var_value),
+                arrowprops=dict(arrowstyle='<->', color='red', lw=2.5))
+    
+    ax.text(0.55, (var_value + cvar_value) / 2,
+            f'Additional\nTail Risk:\n{tail_risk:.4%}',
+            fontsize=12, fontweight='bold', color='red',
+            va='center')
+    
+    # Add horizontal line at y=0
+    ax.axhline(0, color='black', linewidth=0.8, linestyle='-')
+
+    # add titles and labels
+    ax.set_ylabel('Loss Magnitude', fontsize=12, fontweight='bold')
+    ax.set_title(f'VaR vs CVaR - Demonstrating Tail Risk\n'{confidence_level:.0%} Confidence Level',
+                 fontsize=14, fontweight='bold')
+    
+    # format y-axis as percentage
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+
+    # add textbox with summary interpretation
