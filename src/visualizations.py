@@ -336,4 +336,134 @@ def plot_rolling_var(returns, window=60, confidence_level=0.95):
     ax1.legend(loc='upper right', fontsize=10)
     ax1.grid(alpha=0.3)
 
-    # 2: plot rolling std dev
+    # 2: plot rolling std dev (volatility)
+    ax2.plot(rolling_std.index, rolling_std, color='blue', linewidth=2,
+             label=f'{window}-day Rolling Volatility')
+    ax2.fill_between(rolling_std.index, rolling_std, alpha=0.2, color='blue')
+
+    ax2.set_xlabel('Date', fontsize=11, fontweight='bold')
+    ax2.set_ylabel('Volatility (Std Dev)', fontsize=11, fontweight='bold')
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+    ax2.legend(loc='upper right')
+    ax2.grid(alpha=0.3)
+
+    plt.tight_layout()
+    return fig
+
+def create_var_dashboard(returns, tickers=None, weights=None,
+                         individual_vars=None, portfolio_var=None,
+                         confidence_level=0.95):
+    """
+    Create a dashboard of VaR visualizations.
+    Combine several plots into one figure for comprehensive analysis.
+    """
+
+    from calculations import (historical_var, parametric_var, 
+                              monte_carlo_var, conditional_var)
+    
+    # calculate VaR values
+    hist_var = historical_var(returns, confidence_level)
+    param_var = parametric_var(returns, confidence_level)
+    mc_var = monte_carlo_var(returns, confidence_level, 5000)
+    cvar = conditional_var(returns, hist_var, confidence_level)
+
+    # create subplots
+    fig = plt.figure(figsize=(16,10))
+    gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+
+    # 1: Distribution with Historical VaR
+    ax1 = fig.add_subplot(gs[0, 0])
+    if isinstance(returns, pd.Series):
+        returns_array = returns.values
+    else:
+        returns_array = returns
+
+    n, bins, patches = ax1.hist(returns_array, bins=40, alpha=0.7,
+                                color='skyblue', edgecolor='black')
+    
+    for i, patch in enumerate(patches):
+        if bins[i] <= hist_var:
+            patch.set_facecolor('red')
+            patch.set_alpha(0.8)
+
+    ax1.axvline(hist_var, color='red', linestyle='--', linewidth=2,
+                label=f'VaR (Historical): {hist_var:.4f}')
+    ax1.axvline(cvar, color='orange', linestyle='--', linewidth=2,
+                label=f'CVaR: {cvar:.4f}')
+    ax1.set_xlabel('Daily Return')
+    ax1.set_ylabel('Frequency')
+    ax1.set_title('Return Distribution with VaR', fontweight='bold')
+    ax1.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.1%}'))
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    # 2: VaR Method Comparison
+    ax2 = fig.add_subplot(gs[0, 1])
+    methods = ['Historical', 'Parametric', 'Monte Carlo']
+    values = [hist_var, param_var, mc_var]
+    colors = ['#d62728', '#ff7f0e', '#9467bd']
+    bars = ax2.bar(methods, values, color=colors, alpha=0.7,
+                   edgecolor='black')
+    for bar, value in zip(bars, values):
+        height = bar.get_height()
+        ax2.text(bar.get_x() + bar.get_width()/2., height,
+                 f'{value:.4f}', ha='center', va='bottom' if value < 0 else 'top',
+                 fontsize=11, fontweight='bold')
+    ax2.axhline(0, color='black', linewidth=0.8, linestyle='-')
+    ax2.set_ylabel('VaR (Potential Loss)')
+    ax2.set_title('VaR Method Comparison', fontweight='bold')
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+    ax2.grid(axis='y', alpha=0.3)
+
+    # 3: Portfolio Diversification Effect (if applicable)
+    if individual_vars and portfolio_var and tickers:
+        ax3 = fig.add_subplot(gs[1, 0])
+        labels = list(tickers) + ['Portfolio']
+        vals = [individual_vars[t] for t in tickers] + [portfolio_var]
+        cols = ['lightcoral'] * len(tickers) + ['green']
+        bars = ax3.bar(labels, vals, color=cols, alpha=0.7,
+                       edgecolor='black')
+        for bar, value in zip(bars, vals):
+            height = bar.get_height()
+            ax3.text(bar.get_x() + bar.get_width()/2., height,
+                     f'{value:.2%}', ha='center', va='bottom' if value < 0 else 'top',
+                     fontsize=11, fontweight='bold')
+        ax3.axhline(0, color='black', linewidth=0.8)
+        ax3.set_ylabel('VaR (Potential Loss)')
+        ax3.set_title('Portfolio Diversification Effect', fontweight='bold')
+        ax3.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+        ax3.grid(axis='y', alpha=0.3)
+    else:
+        ax3 = fig.add_subplot(gs[1, 0])
+        ax3.text(0.5, 0.5, 'Portfolio Data Not Provided',
+                 ha='center', va='center', fontsize=12, style='italic')
+        ax3.axis('off')
+
+    # 4: VaR vs CVaR
+    ax4 = fig.add_subplot(gs[1, 1])
+    labels = ['VaR', 'CVaR']
+    vals = [hist_var, cvar]
+    cols = ['#ff7f0e', '#d62728']
+    bars = ax4.bar(labels, vals, color=cols, alpha=0.7,
+                   edgecolor='black', width=0.5)
+    for bar, value in zip(bars, vals):
+        height = bar.get_height()
+        ax4.text(bar.get_x() + bar.get_width()/2., height,
+                 f'{value:.4f}', ha='center', va='bottom' if value < 0 else 'top',
+                 fontsize=12, fontweight='bold')
+        tail_risk = cvar - hist_var
+        ax4.annotate('', xy=(0.5, cvar), xytext=(0.5, hist_var),
+                     arrowprops=dict(arrowstyle='<->', color='red', lw=2))
+        ax4.text(0.6, (hist_var + cvar) / 2, f'Tail Risk:\n{tail_risk:.4%}',
+                 fontsize=10, fontweight='bold', color='red', va='center')
+        ax4.axhline(0, color='black', linewidth=0.8)
+        ax4.set_ylabel('Loss Magnitude')
+        ax4.set_title('VaR vs CVaR', fontweight='bold')
+        ax4.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+
+        # Overall figure title
+        fig.suptitle(f'Value at Risk (VaR) Analysis Dashboard\n'
+                     f'Confidence Level: {confidence_level:.0%}',
+                     fontsize=16, fontweight='bold', y=0.98)
+        
+        return fig
