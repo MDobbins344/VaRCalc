@@ -270,10 +270,70 @@ def plot_cvar_comparison(var_value, cvar_value, confidence_level=0.95):
 
     # add titles and labels
     ax.set_ylabel('Loss Magnitude', fontsize=12, fontweight='bold')
-    ax.set_title(f'VaR vs CVaR - Demonstrating Tail Risk\n'{confidence_level:.0%} Confidence Level',
+    ax.set_title(f'VaR vs CVaR - Demonstrating Tail Risk\n{confidence_level:.0%} Confidence Level',
                  fontsize=14, fontweight='bold')
     
     # format y-axis as percentage
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
 
     # add textbox with summary interpretation
+    tail_risk = abs(cvar_value) - abs(var_value)
+    tail_risk_pct = (tail_risk / abs(var_value)) * 100 if var_value != 0 else 0
+
+    textstr = f'VaR: {confidence_level:.0%}% of days won\'t be worse than {var_value:.2%}"\n\n'
+    textstr += f'CVaR: When it IS worse, average loss is {cvar_value:.2%}"\n\n'
+
+    # interpret tail risk
+    if tail_risk > 0.015: # more than 1.5%
+        textstr += f'CVaR is significantly higher than VaR, indicating substantial tail risk\n'
+    elif tail_risk > 0.005: # more than 0.5% less than 1.5%
+        textstr += f'CVaR is noticeably worse than VaR, indicating moderate tail risk\n'
+    else: # less than 0.5%
+        textstr += f'CVaR is close to VaR, indicating limited tail risk\n'
+
+    textstr += f'({tail_risk:.2%} additional loss)'
+
+    props = dict(boxstyle='round', facecolor='lightyellow', alpha=0.9)
+    ax.text(0.98, 0.02, textstr, transform=ax.transAxes, fontsize=9,
+            verticalalignment='bottom', horizontalalignment='right', bbox=props)
+    
+    # remove x-axis ticks
+    ax.set_xticks([0,1])
+    ax.set_xticklabels(labels, fontsize=11, fontweight='bold')
+
+    plt.tight_layout()
+    return fig
+
+def plot_rolling_var(returns, window=60, confidence_level=0.95):
+    """
+    Plot VaR over time using a rolling window to show risk increase/decrease over time.
+    """
+
+    if not isinstance(returns, pd.Series):
+        raise ValueError("Returns must be a pandas Series with datetime index.")
+    
+    # calculate rolling VaR
+    alpha = 1 - confidence_level
+    rolling_var = returns.rolling(window).quantile(alpha)
+
+    # calculate rolling std dev
+    rolling_std = returns.rolling(window).std()
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14,10), sharex=True)
+
+    # 1: plot returns over time with rolling VaR
+    ax1.plot(returns.index, returns, alpha=0.5, linewidth=0.5, color='gray',
+            label='Daily Returns')
+    ax1.plot(rolling_var.index, rolling_var, color='red', linewidth=2,
+             label=f'{window}-day Rolling VaR ({confidence_level:.0%})')
+    ax1.axhline(0, color='black', linewidth=0.8, linestyle='-')
+    ax1.fill_between(returns.index, rolling_var, alpha=0.2, color='salmon') #***
+
+    ax1.set_ylabel('Return / VaR', fontsize=11, fontweight='bold')
+    ax1.set_title(f'Rolling {window}-Day VaR Analysis\n'f'How Risk Changes Over Time',
+                  fontsize=13, fontweight='bold')
+    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'{y:.1%}'))
+    ax1.legend(loc='upper right', fontsize=10)
+    ax1.grid(alpha=0.3)
+
+    # 2: plot rolling std dev
