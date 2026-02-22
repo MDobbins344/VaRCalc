@@ -6,22 +6,25 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import sys
+import os
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
-# add src directory to sys.path for module imports
-sys.path.append('.')
+# gets gui folder path, then goes up one level to src/ to access modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
 # import modules
-from data_handler import DataHandler
+from src.data_processing import DataProcessor
 
-from calculations import (
+from src.calculations import (
     historical_var, parametric_var, monte_carlo_var,
     conditional_var, calculate_var_dollars,
     compare_var_methods
 )
 
-from visualizations import (
+from src.visualizations import (
     plot_distribution_with_var, plot_var_comparison,
     plot_portfolio_comparison, plot_cvar_comparison,
     plot_rolling_var, create_var_dashboard
@@ -32,7 +35,6 @@ st.set_page_config(
     page_title="VaR Calculator",
     layout="wide",
     page_icon="📊",
-    layout="wide",
     initial_sidebar_state="expanded"
 )
 
@@ -247,7 +249,7 @@ if calculate_button:
     with st.spinner("Fetching data and calculating VaR..."):
 
         try:
-            handler = DataHandler()
+            handler = DataProcessor()
 
             start_str = start_date.strftime("%Y-%m-%d")
             end_str = end_date.strftime("%Y-%m-%d")
