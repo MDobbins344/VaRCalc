@@ -58,7 +58,9 @@ class DataProcessor:
 
             # store historical stock data in object
             self.data = prices
-        
+
+            return prices
+
         except Exception as e:
             print(f"\n❌ ERROR in fetch_data:")
             print(f"   Exception type: {type(e).__name__}")
