@@ -18,21 +18,26 @@ class DataProcessor:
         Fetch historical data from yfinance.
         """
 
+        # store original tickers for error reporting
+        original_tickers = ticker
+        single_ticker = False
+
         try:
 
             # check for single ticker, if so, convert to list
-            if isinstance(tickers, str):
-                tickers = [tickers]
+            if isinstance(ticker, str):
+                tickers = [ticker]
                 single_ticker = True
             else:
+                tickers = ticker
                 single_ticker = False
 
             # fetch all tickers in one API call
-            data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            data = yf.download(tickers, start=start_date, end=end_date, progress=False)
 
             # throw error if no data found
             if data.empty:
-                raise ValueError("No data found. Please check the ticker symbol(s): {tickers}")
+                raise ValueError(f"No data found. Please check the ticker symbol(s): {tickers}")
             
             # if single ticker, display as Series
             if single_ticker:
@@ -55,7 +60,12 @@ class DataProcessor:
             self.data = prices
         
         except Exception as e:
-            print(f"Error fetching data: {e}")
+            print(f"\n❌ ERROR in fetch_data:")
+            print(f"   Exception type: {type(e).__name__}")
+            print(f"   Exception message: {str(e)}")
+            print(f"   Tickers attempted: {original_tickers}")
+            import traceback
+            traceback.print_exc()
             return None
 
     

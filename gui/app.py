@@ -258,7 +258,7 @@ if calculate_button:
 
             # single stock analysis
             if analysis_type == "Single Stock":
-                prices = handler.fetch_stock_data(tickers[0], start_str, end_str)
+                prices = handler.fetch_data(tickers[0], start_str, end_str)
 
                 if prices is None or len(prices) == 0:
                     st.error(f"No data found for {tickers[0]}. Please check the ticker and date range.")
