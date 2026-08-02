@@ -282,7 +282,7 @@ if calculate_button:
             hist_var = historical_var(portfolio_returns, confidence_level)
             param_var = parametric_var(portfolio_returns, confidence_level)
             mc_var = monte_carlo_var(portfolio_returns, confidence_level, 10000)
-            cvar = conditional_var(portfolio_returns, hist_var, confidence_level, var_threshold=hist_var)
+            cvar = conditional_var(portfolio_returns, hist_var, confidence_level)
 
             # convert to dollars
             hist_var_dollars = calculate_var_dollars(hist_var, portfolio_value)
